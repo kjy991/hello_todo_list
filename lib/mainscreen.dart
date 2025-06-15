@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hello_todo_list/add_task.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -7,6 +9,34 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  List<String> todoList = [];
+
+  void updateText({required String todoText}) {
+    setState(() {
+      todoList.insert(0, todoText);
+    });
+    writeLocalData();
+    Navigator.pop(context);
+  }
+
+  void localData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      todoList = (prefs.getStringList("todoList") ?? []).toList();
+    });
+  }
+
+  void writeLocalData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('todoList', todoList);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    localData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,8 +50,12 @@ class _MainScreenState extends State<MainScreen> {
               showModalBottomSheet(
                 context: context,
                 builder: (context) {
-                  return Container(
-                    height: 250,
+                  return Padding(
+                    padding: MediaQuery.of(context).viewInsets,
+                    child: Container(
+                      height: 250,
+                      child: AddTask(todoText: updateText),
+                    ),
                   );
                 },
               );
@@ -29,6 +63,35 @@ class _MainScreenState extends State<MainScreen> {
             icon: const Icon(Icons.add),
           ),
         ],
+      ),
+      body: ListView.builder(
+        itemCount: todoList.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (context) {
+                  return Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(20),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          todoList.removeAt(index);
+                        });
+                        writeLocalData();
+                        Navigator.pop(context);
+                      },
+                      child: Text("Task Done!"),
+                    ),
+                  );
+                },
+              );
+            },
+            title: Text(todoList[index]),
+          );
+        },
       ),
     );
   }
