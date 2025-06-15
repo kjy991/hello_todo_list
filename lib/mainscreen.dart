@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hello_todo_list/add_task.dart';
+import 'package:hello_todo_list/todo_list_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainScreen extends StatefulWidget {
@@ -69,74 +70,53 @@ class _MainScreenState extends State<MainScreen> {
                 style: TextStyle(fontSize: 20),
               ),
             )
-          : ListView.builder(
-              itemCount: todoList.length,
-              itemBuilder: (context, index) {
-                return Dismissible(
-                  key: UniqueKey(),
-                  direction: DismissDirection.startToEnd,
-                  background: Container(
-                    color: Colors.red,
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Icon(Icons.check),
-                        ),
-                      ],
-                    ),
-                  ),
-                  onDismissed: (direction) {
-                    setState(() {
-                      todoList.removeAt(index);
-                    });
-                    writeLocalData();
-                  },
-                  child: ListTile(
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        builder: (context) {
-                          return Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(20),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  todoList.removeAt(index);
-                                });
-                                writeLocalData();
-                                Navigator.pop(context);
-                              },
-                              child: Text("Task Done!"),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    title: Text(todoList[index]),
-                  ),
-                );
+          : TodoListView(
+              items: todoList,
+              onTap: (index) => taskDone(context, index),
+              onDismissed: (index) {
+                setState(() => todoList.removeAt(index));
+                writeLocalData();
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            builder: (context) {
-              return Padding(
-                padding: MediaQuery.of(context).viewInsets,
-                child: Container(
-                  height: 250,
-                  child: AddTask(todoText: addTodo),
-                ),
-              );
-            },
-          );
-        },
+        onPressed: () => addTo(context),
         backgroundColor: Colors.black,
         child: const Icon(Icons.add, color: Colors.white),
       ),
+    );
+  }
+
+  void taskDone(BuildContext context, int index) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(20),
+          child: ElevatedButton(
+            onPressed: () {
+              setState(() {
+                todoList.removeAt(index);
+              });
+              writeLocalData();
+              Navigator.pop(context);
+            },
+            child: Text("Task Done!"),
+          ),
+        );
+      },
+    );
+  }
+
+  void addTo(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Padding(
+          padding: MediaQuery.of(context).viewInsets,
+          child: Container(height: 250, child: AddTask(todoText: addTodo)),
+        );
+      },
     );
   }
 }
