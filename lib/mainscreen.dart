@@ -11,7 +11,27 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   List<String> todoList = [];
 
-  void updateText({required String todoText}) {
+  void addTodo({required String todoText}) {
+    if (todoList.contains(todoText)) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("Already exists"),
+            content: Text("Tis task is already exists"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text("Close"),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
     setState(() {
       todoList.insert(0, todoText);
     });
@@ -41,57 +61,81 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(child: Text("Drawer")),
-      appBar: AppBar(
-        title: const Text("TODO App"),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  return Padding(
-                    padding: MediaQuery.of(context).viewInsets,
-                    child: Container(
-                      height: 250,
-                      child: AddTask(todoText: updateText),
+      appBar: AppBar(title: const Text("TODO App"), centerTitle: true),
+      body: (todoList.isEmpty)
+          ? Center(
+              child: Text(
+                "No items on th List",
+                style: TextStyle(fontSize: 20),
+              ),
+            )
+          : ListView.builder(
+              itemCount: todoList.length,
+              itemBuilder: (context, index) {
+                return Dismissible(
+                  key: UniqueKey(),
+                  direction: DismissDirection.startToEnd,
+                  background: Container(
+                    color: Colors.red,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Icon(Icons.check),
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                  onDismissed: (direction) {
+                    setState(() {
+                      todoList.removeAt(index);
+                    });
+                    writeLocalData();
+                  },
+                  child: ListTile(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (context) {
+                          return Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(20),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  todoList.removeAt(index);
+                                });
+                                writeLocalData();
+                                Navigator.pop(context);
+                              },
+                              child: Text("Task Done!"),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    title: Text(todoList[index]),
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            builder: (context) {
+              return Padding(
+                padding: MediaQuery.of(context).viewInsets,
+                child: Container(
+                  height: 250,
+                  child: AddTask(todoText: addTodo),
+                ),
               );
             },
-            icon: const Icon(Icons.add),
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: todoList.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  return Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(20),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          todoList.removeAt(index);
-                        });
-                        writeLocalData();
-                        Navigator.pop(context);
-                      },
-                      child: Text("Task Done!"),
-                    ),
-                  );
-                },
-              );
-            },
-            title: Text(todoList[index]),
           );
         },
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
